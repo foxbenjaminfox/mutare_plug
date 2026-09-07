@@ -28,13 +28,10 @@ defmodule Mutare.Plug.MixProject do
   defp elixirc_paths(_), do: ["lib"]
 
   defp description do
-    "Custom Mutare mutators for the Plug request surface — " <>
-      "the Plug.Conn calls a plug, router, or controller action performs."
+    "Mutare mutators for Plug"
   end
 
-  # Hex package metadata. The `mutare` core is still a `path:` dependency, so an
-  # actual `mix hex.publish` stays blocked until Mutare itself ships to Hex — this
-  # section keeps the manifest ready for that day. Only runtime and doc artifacts
+  # Hex package metadata. Only runtime and doc artifacts
   # ship — never the test suite, fixtures, or the examples app.
   defp package do
     [
@@ -54,9 +51,9 @@ defmodule Mutare.Plug.MixProject do
       # The host mutation-testing engine. `mutare_plug` implements `Mutare.Mutator`
       # and rides only its public extension points (`Mutare.Calls`, `Mutare.AST`).
       # Tests use `Mutare.Test` and `Mutare.AST` for AST parse/render, so no direct
-      # `:sourceror` dep is needed. A path dep for local development until `mutare`
-      # is published; a consuming project depends on both as `:dev`/`:test` deps.
-      {:mutare, path: "../mutare"},
+      # `:sourceror` dep is needed. A consuming project depends on both as
+      # `:dev`/`:test` deps.
+      {:mutare, "~> 0.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}

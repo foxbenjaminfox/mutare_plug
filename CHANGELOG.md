@@ -5,7 +5,9 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.1.0 - Unreleased
+## [Unreleased]
+
+## [0.1.0] - 2026-09-07
 
 Initial release.
 
@@ -32,3 +34,6 @@ Initial release.
   response body?"); on a literal body its whole-call rewrite supersedes the
   built-in string family's sentinel leaves via Mutare's overlap pruning.
 - `Mutare.Plug.all/0` for splicing all six families into a `:mutators` list.
+
+[Unreleased]: https://github.com/foxbenjaminfox/mutare_plug/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/foxbenjaminfox/mutare_plug/releases/tag/v0.1.0

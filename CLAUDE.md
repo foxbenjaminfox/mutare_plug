@@ -31,7 +31,7 @@ mix mutare examples/demo           # appends the compiled package's ebin to its 
 
 ## Dependencies & layout
 
-- `{:mutare, path: "../mutare"}` is a **path dep** for local dev — the engine must be present as a sibling checkout for anything to compile. The engine source (`Mutare.Mutator`, `Mutare.Test`, `Mutare.Transform.Calls`, `Mutare.AST`, the `# mutare:ignore` reader, etc.) lives in `../mutare/lib` — **read it there when you need the exact contract** of a callback or helper, since this package only consumes Mutare's public extension points.
+- `{:mutare, "~> 0.1"}` is the engine, pulled from Hex (`deps/mutare`). The engine source (`Mutare.Mutator`, `Mutare.Test`, `Mutare.Transform.Calls`, `Mutare.AST`, the `# mutare:ignore` reader, etc.) is also checked out as a sibling at `../mutare/lib` — **read it there when you need the exact contract** of a callback or helper, since this package only consumes Mutare's public extension points. To develop against unreleased core, switch the dep to `{:mutare, path: "../mutare"}` locally and switch it back before committing.
 - `lib/mutare/plug.ex` is the public entry (`all/0`); each family is one module under `lib/mutare/plug/`. Test files mirror that layout under `test/mutare/plug/`.
 - This is the **base** package of the family. `mutare_phoenix` builds on it (the way `phoenix` builds on `plug`), and `mutare_phoenix_live_view` on that; keep families belonging to the `Phoenix.Controller` or LiveView surfaces out of here (see Scope).
 
