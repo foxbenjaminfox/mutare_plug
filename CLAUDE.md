@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```sh
-mix deps.get                       # fetch deps (mutare comes from Hex)
+mix deps.get                       # fetch deps
 mix compile
 mix test                           # full suite (async)
 mix test test/mutare/plug/status_test.exs          # one file
