@@ -3,16 +3,17 @@ defmodule Mutare.Plug.Body do
   `:resp_body` — blanks the response body: the body argument of `Plug.Conn.send_resp/3`
   and `Plug.Conn.resp/3` becomes `""`. A surviving mutant means no test reads the
   response body — the response was sent, with the right status, and nothing checked
-  what it said.
+  its contents.
 
       send_resp(conn, 200, Jason.encode!(payload))  # → send_resp(conn, 200, "")
       conn |> resp(:ok, body)                       # → conn |> resp(:ok, "")
 
   Matches both calls written directly (`Plug.Conn.send_resp(conn, ...)`), aliased, or
   bare-imported. A body that is already a literal `""` is left alone (the mutant would
-  change nothing). The status argument stays with `:http_status` (atoms) and the built-in
-  literal families (integers); `send_file/3,4,5` is out of scope because its third
-  argument is a path, not a body — blanking it would crash rather than answer a question.
+  change nothing). The status argument is handled by `:http_status` (atoms) and the
+  built-in literal families (integers); `send_file/3,4,5` is out of scope because its third
+  argument is a path, not a body — blanking it would cause a file error without testing
+  assertions about the response body.
 
   Because the mutation is the original call with exactly the body argument substituted,
   `Mutare.Transform.Overlap` treats it as covering that node: on a *literal* body the

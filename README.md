@@ -34,7 +34,7 @@ to Mutare's built-in literal family; `:http_status` only swaps *atom* statuses.
 
 ## Usage
 
-`mutare_plug` rides on the [Mutare](https://hex.pm/packages/mutare) engine, so add both as
+`mutare_plug` uses the [Mutare](https://hex.pm/packages/mutare) engine, so add both as
 `:dev`/`:test` dependencies:
 
 ```elixir
@@ -66,7 +66,7 @@ on top for the `Phoenix.Controller` surface (see "Scope").
 
 ## Configuring a family
 
-`:http_status`'s swap table is tunable. Give the family `{module, opts}` with a `:swaps`
+`:http_status`'s swap table is configurable. Use `{module, opts}` with a `:swaps`
 map — a status you list **replaces** its built-in siblings, an empty list **disables** it,
 and any status you omit keeps its built-in siblings. Configuring a family means listing it
 yourself, so expand `Mutare.Plug.all/0` into its members and replace that one entry:
@@ -86,9 +86,9 @@ yourself, so expand `Mutare.Plug.all/0` into its members and replace that one en
 ]
 ```
 
-Configured siblings must be valid `Plug.Conn.Status` reason atoms — trusted, not checked: a
-sibling that isn't a real status produces a crashing mutant rather than the built-in table's
-valid-but-wrong swap. See `Mutare.Plug.Status` for the full table.
+Configured siblings must be valid `Plug.Conn.Status` reason atoms. They are not validated:
+a sibling that isn't a real status produces a crashing mutant rather than a valid but
+incorrect status. See `Mutare.Plug.Status` for the full table.
 
 ## Why not the built-in atom mutators?
 
@@ -114,10 +114,11 @@ mix mutare examples/demo
 
 ## Scope
 
-This package owns the `Plug.Conn` surface only. The `Phoenix.Controller` surface
-(`redirect/2`'s status, and the defensive `:skip` routing for Phoenix's compile-time
-macros) is the companion `mutare_phoenix`, which depends on this package the way `phoenix`
-depends on `plug`; LiveView is `mutare_phoenix_live_view` on top of that.
+This package mutates `Plug.Conn` calls only. The companion `mutare_phoenix` handles
+the `Phoenix.Controller` surface (`redirect/2`'s status, and the defensive `:skip`
+routing for Phoenix's compile-time macros). It depends on this package the way
+`phoenix` depends on `plug`;
+`mutare_phoenix_live_view` adds support for LiveView.
 
 ## License
 

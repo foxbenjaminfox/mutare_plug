@@ -9,14 +9,14 @@ defmodule Mutare.Plug.Session do
       configure_session(conn, renew: true)      # → conn
 
   Removing `configure_session(conn, renew: true)` on login is the classic session-fixation
-  bypass (the session id survives authentication); removing `configure_session(conn,
-  drop: true)` on logout is its twin (the session survives sign-out). A survivor here means
-  no test pins that lifecycle behaviour.
+  bypass (the session id remains unchanged after authentication). Removing
+  `configure_session(conn, drop: true)` on logout leaves the session in place after
+  sign-out. A survivor here means no test pins that lifecycle behaviour.
 
   Matches `put_session/3`, `delete_session/2`, `clear_session/1`, and `configure_session/2`
   written directly (`Plug.Conn.put_session(conn, ...)`), aliased, or bare-imported. The
   boolean option *values* inside `configure_session/2` are still left to Mutare's built-in
-  boolean mutators; this family owns only the call's presence.
+  boolean mutators; this family only removes the call.
   """
   @behaviour Mutare.Mutator
 

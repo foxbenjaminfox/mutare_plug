@@ -1,7 +1,7 @@
 defmodule Demo.Auth do
   @moduledoc """
-  A Plug that blocks unauthenticated requests — the canonical place a forgotten `halt`
-  lets a request fall through to the handler it was meant to guard.
+  A Plug that blocks unauthenticated requests. Omitting `halt` allows execution to
+  continue to the protected handler.
   """
 
   @doc """

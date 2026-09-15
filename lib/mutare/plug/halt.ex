@@ -1,7 +1,7 @@
 defmodule Mutare.Plug.Halt do
   @moduledoc """
-  `:plug_halt` — removes `Plug.Conn.halt/1`. A plug that fails to `halt` lets the request
-  flow on to the action it meant to block, so a surviving `:plug_halt` mutant means no test
+  `:plug_halt` — removes `Plug.Conn.halt/1`. Without `halt`, execution continues to
+  subsequent plugs and the action, so a surviving `:plug_halt` mutant means no test
   depends on this plug halting.
 
       halt(conn)        # → conn

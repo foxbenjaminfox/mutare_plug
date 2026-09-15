@@ -14,12 +14,12 @@ defmodule Mutare.Plug.Status do
 
   ## Configurable
 
-  The swap table is tunable per instance. Give the family `{module, opts}` with a `:swaps`
+  The swap table is configurable per instance. Use `{module, opts}` with a `:swaps`
   map: a status you list **replaces** its built-in siblings, an empty list **disables** it,
   and any status you omit keeps its built-in siblings. Configured siblings must be valid
-  `Plug.Conn.Status` reason atoms — trusted, not checked: the built-in table guarantees this
-  for its own entries, but a sibling you add that isn't a real status produces a crashing,
-  uninformative mutant rather than the valid-but-wrong swap the table is built to give.
+  `Plug.Conn.Status` reason atoms. The built-in table contains only valid statuses, but
+  configured siblings are not validated. Adding an invalid status produces a crashing,
+  uninformative mutant rather than a valid but incorrect status.
 
   Configuring a family means listing it yourself, so expand `Mutare.Plug.all/0` into its
   members and replace the `Status` entry:

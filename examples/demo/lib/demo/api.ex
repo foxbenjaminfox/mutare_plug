@@ -1,7 +1,7 @@
 defmodule Demo.Api do
   @moduledoc """
   A few request handlers — the functions a `Plug.Router` dispatches to — each performing
-  one response transformation whose correctness lives entirely in *which* call ran with
+  one response transformation whose correctness depends on *which* call ran with
   *what* arguments: the status it sent, the body it wrote.
   """
 

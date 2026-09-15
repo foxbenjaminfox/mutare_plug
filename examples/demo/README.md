@@ -48,26 +48,26 @@ Each survivor is a real test-quality gap. Grouped by family:
   an anonymous request still gets `401` set — yet now falls through to the guarded handler.
   The missing `assert conn.halted` is the gap; the classic authorization-bypass mutation.
 
-- **`:http_status` — the unasserted status** (`Demo.Api.create`). `create` answers
+- **`:http_status` — the unasserted status** (`Demo.Api.create`). `create` sends
   `201 Created`, but its test checks only the response *body* (`"created"`), never the
   status. So swapping `:created` for another success (`:ok`, `:accepted`) is invisible.
   Two survivors, one per plausible sibling. (Contrast `index`, which **does** assert `:ok`
   — its `:created`/`:no_content` mutants are killed.)
 
-- **`:resp_body` — the unread body** (`Demo.Api.health`). `health` answers `200` with a
+- **`:resp_body` — the unread body** (`Demo.Api.health`). `health` sends `200` with a
   fixed body, but its test checks only the *status*, never the body. So blanking the body
   to `""` is invisible: the response was sent, with the right status, and nothing checked
-  what it said. (Contrast `index` and `create`, which **do** assert the body — their
+  its contents. (Contrast `index` and `create`, which **do** assert the body — their
   `:resp_body` mutants are killed.)
 
-The lesson is the package's whole thesis: when a function's behaviour *is* its conn
-transformation, asserting "something happened" isn't enough — you have to assert *which*
-transformation, with *what* arguments. Mutare turns every place you didn't into a survivor.
+When a function's behaviour *is* its conn transformation, asserting "something happened"
+isn't enough — you have to assert *which* transformation, with *what* arguments. Mutare
+turns every place you didn't into a survivor.
 
 > Why `:ok → :error` (or `:mutare`) doesn't already cover `:http_status`: in a status
 > position both of Mutare's built-in atom swaps **crash** (`:error`/`:mutare` aren't valid
 > statuses), an uninformative kill. `:http_status` swaps to a *valid* sibling so a survivor
 > means a genuine missing assertion, not a crash — and Mutare's overlap pruning drops the
-> redundant crashing leaves. `:resp_body` earns its place the same way: on a literal body
+> redundant crashing leaves. `:resp_body` works similarly: on a literal body
 > its whole-call blank supersedes the built-in string family's `""`/`"mutare"` leaves, so one
 > clean "is the body read?" mutant remains.
