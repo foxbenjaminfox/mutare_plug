@@ -1,5 +1,10 @@
 # Mutare Plug
 
+[![Hex.pm](https://img.shields.io/hexpm/v/mutare_plug.svg)](https://hex.pm/packages/mutare_plug)
+[![Hexdocs](https://img.shields.io/badge/hexdocs-docs-blue.svg)](https://hexdocs.pm/mutare_plug)
+[![CI](https://github.com/foxbenjaminfox/mutare_plug/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/foxbenjaminfox/mutare_plug/actions/workflows/ci.yml)
+[![License](https://img.shields.io/hexpm/l/mutare_plug.svg)](https://github.com/foxbenjaminfox/mutare_plug/blob/master/LICENSE)
+
 Custom [Mutare](https://hex.pm/packages/mutare) mutators for the **Plug request surface** —
 the `Plug.Conn` calls a plug, router, or controller action performs on the conn.
 
