@@ -89,7 +89,7 @@ defmodule Mutare.Plug.Status do
   }
 
   # The `Plug.Conn` calls that carry a swappable atom status. In every supported call, the
-  # status sits at effective argument index 1 — the second positional argument:
+  # status sits at argument index 1 — the second positional argument:
   # `put_status(conn, status)`, `send_resp(conn, status, body)`, `send_file(conn, status,
   # path)`, and so on. The arity is call-specific so a wrong-arity call
   # (`put_status(c, :ok, :extra)`, `send_resp(c, :ok)`) resolves but contributes no
@@ -108,48 +108,41 @@ defmodule Mutare.Plug.Status do
   @spec name() :: :http_status
   def name, do: :http_status
 
-  # No `mutate/1`: the status atom's position depends on the call's effective arity,
-  # which isn't knowable without pipe context — so this family produces only through
-  # the context-aware `mutate/2`.
+  # No `mutate/1`: the swap table is read from the per-instance `:swaps` option, so this
+  # family produces only through the context-aware `mutate/2`.
   @impl Mutare.Mutator
   @spec mutate(Macro.t(), Mutare.Mutator.context()) :: :skip | [Macro.t()]
-  def mutate(node, %{pipe_mode: pipe_mode} = context) do
+  def mutate(node, context) do
     case Calls.resolved_call(node) do
       {[:Plug, :Conn], call, args, rebuild} ->
-        status_mutations(call, args, pipe_mode, rebuild, swaps_table(context))
+        status_mutations(call, args, rebuild, swaps_table(context))
 
       _other ->
         :skip
     end
   end
 
-  # The status is the second positional argument of every matched call — effective index 1
-  # of `put_status(conn, status)`, `send_resp(conn, status, body)`, `resp(conn, status,
-  # body)`. Recover the visible index from the pipe context and, when the call is at its
-  # expected arity and that argument holds a swappable atom status, emit one rebuilt call per
-  # sibling. Anything else (an integer status, a variable, an unrecognised atom, or the wrong
-  # arity) contributes nothing.
+  # The status is the second positional argument of every matched call — index 1 of
+  # `put_status(conn, status)`, `send_resp(conn, status, body)`, `resp(conn, status, body)`;
+  # a pipe stage is offered as that direct call, its piped conn at index 0. When the call is
+  # at its expected arity and that argument holds a swappable atom status, emit one rebuilt
+  # call per sibling. Anything else (an integer status, a variable, an unrecognised atom, or
+  # the wrong arity) contributes nothing.
   #
   # The swap touches exactly the status atom, so `Mutare.Transform.Overlap` auto-prunes the
   # redundant crashing leaves at that range (`AtomLiteral` `:mutare`, `ConventionAtom`
   # `:error`) — no declaration needed.
-  @spec status_mutations(
-          atom(),
-          [Macro.t()],
-          Mutare.Mutator.pipe_mode(),
-          (atom(), [Macro.t()] -> Macro.t()),
-          swaps()
-        ) :: :skip | [Macro.t()]
-  defp status_mutations(call, args, pipe_mode, rebuild, swaps) do
-    with effective_arity when is_integer(effective_arity) <-
-           Mutare.Mutator.effective_arity(args, pipe_mode),
-         true <- MapSet.member?(@status_calls, {call, effective_arity}),
-         vis when is_integer(vis) <- Mutare.Mutator.visible_index(1, pipe_mode),
-         status_node = Enum.at(args, vis),
+  @status_index 1
+
+  @spec status_mutations(atom(), [Macro.t()], (atom(), [Macro.t()] -> Macro.t()), swaps()) ::
+          :skip | [Macro.t()]
+  defp status_mutations(call, args, rebuild, swaps) do
+    with true <- MapSet.member?(@status_calls, {call, length(args)}),
+         status_node = Enum.at(args, @status_index),
          atom when not is_nil(atom) <- status_atom(status_node),
          [_ | _] = siblings <- Map.get(swaps, atom) do
       Enum.map(siblings, fn sibling ->
-        rebuild.(call, List.replace_at(args, vis, swap_status(status_node, sibling)))
+        rebuild.(call, List.replace_at(args, @status_index, swap_status(status_node, sibling)))
       end)
     else
       _ -> :skip

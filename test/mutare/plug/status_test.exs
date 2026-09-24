@@ -26,7 +26,7 @@ defmodule Mutare.Plug.StatusTest do
   # `status_atom/1` (the second clause) and `swap_status/2` (the `AST.literal/1` branch).
   defp bare_node_mutations(node, mutators) do
     for %Dispatch.Result{node: mutated} <-
-          Dispatch.mutations(node, List.wrap(mutators), %{pipe_mode: :unpiped}),
+          Dispatch.mutations(node, List.wrap(mutators)),
         do: Mutare.AST.to_string(mutated)
   end
 
@@ -175,7 +175,7 @@ defmodule Mutare.Plug.StatusTest do
              ]
     end
 
-    test "piped send_file/3 finds the status at visible index 0" do
+    test "piped send_file/3 finds the status at index 1, after the piped conn" do
       source = controller("  def show(conn), do: conn |> send_file(:not_found, \"/tmp/a\")")
 
       assert status_diffs(source) == [
@@ -249,7 +249,7 @@ defmodule Mutare.Plug.StatusTest do
   end
 
   describe "pipe awareness" do
-    test "a piped put_status finds the status as its lone visible argument" do
+    test "a piped put_status finds the status after the piped conn" do
       source = controller("  def show(conn), do: conn |> put_status(:not_found)")
 
       assert status_diffs(source) == [
@@ -258,7 +258,7 @@ defmodule Mutare.Plug.StatusTest do
              ]
     end
 
-    test "a piped send_resp finds the status at visible index 0 (conn is the pipe head)" do
+    test "a piped send_resp finds the status at index 1 (the piped conn is index 0)" do
       source = controller("  def show(conn), do: conn |> send_resp(:not_found, \"\")")
 
       assert status_diffs(source) == [

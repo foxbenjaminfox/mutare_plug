@@ -1,7 +1,8 @@
 defmodule Mutare.Plug.HaltTest do
   @moduledoc """
   `:plug_halt` — removes `Plug.Conn.halt/1` (the "forgot to halt" authorization mutation),
-  pipe-aware: non-piped → the conn, piped → `Function.identity()`. Matches direct, aliased,
+  in both spellings: `halt(conn)` → `conn`, and a piped stage collapses to what flows into
+  it, diffed over the pipe it removes. Matches direct, aliased,
   and bare-imported (`use`-style) forms; touches nothing else.
   """
   use ExUnit.Case, async: true
@@ -39,21 +40,20 @@ defmodule Mutare.Plug.HaltTest do
   end
 
   describe "pipe awareness" do
-    test "a piped stage becomes the identity no-op (the only compile-safe removal)" do
+    test "a piped stage collapses to the pipe that flows into it" do
       assert halt_diffs(plug("  def call(conn, _o), do: conn |> authorize() |> halt()")) ==
-               [{"halt()", "Elixir.Function.identity()"}]
+               [{"conn |> authorize() |> halt()", "conn |> authorize()"}]
     end
 
     test "halt mid-chain is still removed" do
       body = "  def call(conn, _o), do: conn |> halt() |> log()"
-      assert halt_diffs(plug(body)) == [{"halt()", "Elixir.Function.identity()"}]
+      assert halt_diffs(plug(body)) == [{"conn |> halt()", "conn"}]
     end
 
-    test "a piped qualified Plug.Conn.halt() is also an identity stage" do
+    test "a piped qualified Plug.Conn.halt() collapses the same way" do
       source = "defmodule P do\n  def call(conn, _o), do: conn |> Plug.Conn.halt()\nend\n"
 
-      assert halt_diffs(source) ==
-               [{"Plug.Conn.halt()", "Elixir.Function.identity()"}]
+      assert halt_diffs(source) == [{"conn |> Plug.Conn.halt()", "conn"}]
     end
   end
 
@@ -87,10 +87,9 @@ defmodule Mutare.Plug.HaltTest do
       assert node_mutations("Plug.Conn.halt(conn)", Halt) == ["conn"]
     end
 
-    test "a piped stage node yields the identity no-op" do
-      assert node_mutations("Plug.Conn.halt()", Halt, :piped) == [
-               "Elixir.Function.identity()"
-             ]
+    test "a piped stage arrives as the direct call, so the same snippet stands for it" do
+      # `conn |> Plug.Conn.halt()` is offered as `Plug.Conn.halt(conn)`; there is no pipe node.
+      assert node_mutations("Plug.Conn.halt(conn)", Halt) == ["conn"]
     end
   end
 

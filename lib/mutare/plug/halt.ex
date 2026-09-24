@@ -5,7 +5,7 @@ defmodule Mutare.Plug.Halt do
   depends on this plug halting.
 
       halt(conn)        # → conn
-      conn |> halt()    # → conn |> Function.identity()
+      conn |> halt()    # → conn
 
   Matches `halt` written directly (`Plug.Conn.halt(conn)`), aliased, or bare-imported
   (`halt(conn)`, the form `use Plug.Builder` / `use Plug.Router` — or Phoenix's
@@ -22,10 +22,7 @@ defmodule Mutare.Plug.Halt do
   @spec name() :: :plug_halt
   def name, do: :plug_halt
 
-  # No `mutate/1`: whether removal returns the first arg (non-piped) or
-  # `Function.identity()` (piped) depends on pipe context, unknowable from the node
-  # alone — so this family produces only through the context-aware `mutate/2`.
   @impl Mutare.Mutator
-  @spec mutate(Macro.t(), Mutare.Mutator.context()) :: :skip | [Macro.t()]
-  def mutate(node, %{pipe_mode: pipe_mode}), do: ConnCall.remove(node, pipe_mode, @removable)
+  @spec mutate(Macro.t()) :: :skip | [Macro.t()]
+  def mutate(node), do: ConnCall.remove(node, @removable)
 end

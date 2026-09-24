@@ -4,7 +4,7 @@ defmodule Mutare.Plug.Session do
   depends on this code writing, deleting, clearing, or reconfiguring session state.
 
       put_session(conn, :user_id, user.id)      # → conn
-      conn |> delete_session(:user_id)          # → conn |> Function.identity()
+      conn |> delete_session(:user_id)          # → conn
       clear_session(conn)                       # → conn
       configure_session(conn, renew: true)      # → conn
 
@@ -33,8 +33,7 @@ defmodule Mutare.Plug.Session do
   @spec name() :: :plug_session
   def name, do: :plug_session
 
-  # No `mutate/1`: removal shape depends on pipe context.
   @impl Mutare.Mutator
-  @spec mutate(Macro.t(), Mutare.Mutator.context()) :: :skip | [Macro.t()]
-  def mutate(node, %{pipe_mode: pipe_mode}), do: ConnCall.remove(node, pipe_mode, @removable)
+  @spec mutate(Macro.t()) :: :skip | [Macro.t()]
+  def mutate(node), do: ConnCall.remove(node, @removable)
 end

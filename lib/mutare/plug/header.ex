@@ -4,7 +4,7 @@ defmodule Mutare.Plug.Header do
   test depends on this code setting or deleting that response header.
 
       put_resp_header(conn, "cache-control", "no-store")  # → conn
-      conn |> delete_resp_header("x-legacy")              # → conn |> Function.identity()
+      conn |> delete_resp_header("x-legacy")              # → conn
       put_resp_content_type(conn, "application/json")     # → conn
 
   Removing `put_resp_content_type/2,3` leaves the response on the upstream (or default)
@@ -30,8 +30,7 @@ defmodule Mutare.Plug.Header do
   @spec name() :: :resp_header
   def name, do: :resp_header
 
-  # No `mutate/1`: removal shape depends on pipe context.
   @impl Mutare.Mutator
-  @spec mutate(Macro.t(), Mutare.Mutator.context()) :: :skip | [Macro.t()]
-  def mutate(node, %{pipe_mode: pipe_mode}), do: ConnCall.remove(node, pipe_mode, @removable)
+  @spec mutate(Macro.t()) :: :skip | [Macro.t()]
+  def mutate(node), do: ConnCall.remove(node, @removable)
 end

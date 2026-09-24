@@ -78,24 +78,23 @@ defmodule Mutare.Plug.HeaderTest do
   end
 
   describe "pipe awareness" do
-    test "piped header calls become identity stages" do
+    test "piped header calls each collapse to the pipe that flows into them" do
       source =
         plug(
           ~s/  def call(conn), do: conn |> put_resp_header("cache-control", "no-store") |> delete_resp_header("x-a")/
         )
 
       assert header_diffs(source) == [
-               {"put_resp_header(\"cache-control\", \"no-store\")", "Elixir.Function.identity()"},
-               {"delete_resp_header(\"x-a\")", "Elixir.Function.identity()"}
+               {"conn |> put_resp_header(\"cache-control\", \"no-store\")", "conn"},
+               {"conn |> put_resp_header(\"cache-control\", \"no-store\") |> delete_resp_header(\"x-a\")",
+                "conn |> put_resp_header(\"cache-control\", \"no-store\")"}
              ]
     end
 
-    test "piped put_resp_content_type/2 becomes an identity stage" do
+    test "piped put_resp_content_type/2 collapses to the conn" do
       source = plug(~s/  def call(conn), do: conn |> put_resp_content_type("text\/plain")/)
 
-      assert header_diffs(source) == [
-               {"put_resp_content_type(\"text/plain\")", "Elixir.Function.identity()"}
-             ]
+      assert header_diffs(source) == [{"conn |> put_resp_content_type(\"text/plain\")", "conn"}]
     end
   end
 

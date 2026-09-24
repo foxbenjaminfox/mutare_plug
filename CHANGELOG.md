@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking: Mutare 0.4.0 or newer is required** (`{:mutare, "~> 0.4.0"}`). Mutare now
+  offers a pipe stage to a mutator as the direct call it is sugar for, and this package
+  reads every call that way; it no longer compiles against an older core.
+- **A removed pipe stage collapses to what flows into it.** Every removal family
+  (`:plug_halt`, `:plug_session`, `:resp_header`, `:resp_cookie`) used to replace a piped
+  stage with `Function.identity()`; the mutant now reads as the stage removed, diffed over
+  the pipe it shortens — `conn |> authorize() |> halt()` → `conn |> authorize()`, and
+  `conn |> halt() |> log()` → `conn |> log()` shows as `conn |> halt()` → `conn`. The
+  mutants themselves are unchanged. An option or status mutation on a piped stage
+  (`:http_status`, `:resp_body`, the `:resp_cookie` option mutants) is still diffed at
+  the stage alone.
+
 ## [0.1.0] - 2026-09-07
 
 Initial release.

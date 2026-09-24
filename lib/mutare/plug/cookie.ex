@@ -33,9 +33,10 @@ defmodule Mutare.Plug.Cookie do
                {[:Plug, :Conn], :delete_resp_cookie, 3}
              ])
 
-  # The options argument for the arity-carrying forms:
-  #   put_resp_cookie(conn, key, value, opts) => effective option index 3
-  #   delete_resp_cookie(conn, key, opts)     => effective option index 2
+  # The options argument for the arity-carrying forms (a pipe stage is offered as the
+  # direct call, its piped conn at index 0):
+  #   put_resp_cookie(conn, key, value, opts) => option index 3
+  #   delete_resp_cookie(conn, key, opts)     => option index 2
   @option_calls %{
     put_resp_cookie: {4, 3},
     delete_resp_cookie: {3, 2}
@@ -51,39 +52,34 @@ defmodule Mutare.Plug.Cookie do
   @spec name() :: :resp_cookie
   def name, do: :resp_cookie
 
-  # No `mutate/1`: removal and option position both depend on pipe context.
   @impl Mutare.Mutator
-  @spec mutate(Macro.t(), Mutare.Mutator.context()) :: :skip | [Macro.t()]
-  def mutate(node, %{pipe_mode: pipe_mode}) do
-    combine_mutations(
-      ConnCall.remove(node, pipe_mode, @removable),
-      option_mutations(node, pipe_mode)
-    )
+  @spec mutate(Macro.t()) :: :skip | [Macro.t()]
+  def mutate(node) do
+    combine_mutations(ConnCall.remove(node, @removable), option_mutations(node))
   end
 
-  defp option_mutations(node, pipe_mode) do
+  defp option_mutations(node) do
     case Calls.resolved_call(node) do
       {[:Plug, :Conn], call, args, rebuild} when is_map_key(@option_calls, call) ->
-        option_mutations(call, args, pipe_mode, rebuild)
+        option_mutations(call, args, rebuild)
 
       _other ->
         :skip
     end
   end
 
-  defp option_mutations(call, args, pipe_mode, rebuild) do
-    {expected_arity, option_index} = Map.fetch!(@option_calls, call)
+  defp option_mutations(call, args, rebuild) do
+    {expected_arity, index} = Map.fetch!(@option_calls, call)
 
-    with ^expected_arity <- Mutare.Mutator.effective_arity(args, pipe_mode),
-         vis when is_integer(vis) <- Mutare.Mutator.visible_index(option_index, pipe_mode),
-         [_ | _] = options <- keyword_option_mutations(call, Enum.at(args, vis), args, vis) do
+    with ^expected_arity <- length(args),
+         [_ | _] = options <- keyword_option_mutations(call, Enum.at(args, index), args, index) do
       Enum.map(options, fn mutated_args -> rebuild.(call, mutated_args) end)
     else
       _other -> :skip
     end
   end
 
-  defp keyword_option_mutations(call, arg, args, option_visible_index) do
+  defp keyword_option_mutations(call, arg, args, option_index) do
     case keyword_list(arg) do
       nil ->
         []
@@ -99,7 +95,7 @@ defmodule Mutare.Plug.Cookie do
                 value,
                 rewrap,
                 args,
-                option_visible_index
+                option_index
               ) do
           mutation
         end
@@ -111,10 +107,10 @@ defmodule Mutare.Plug.Cookie do
   # `delete_resp_cookie/3` forces `max_age: 0` regardless, so a drop there is a no-op).
   # The `:max_age` drop fires whatever the value node is (literal or dynamic): it mutates
   # the option's *presence*, so the current value never matters.
-  defp pair_mutations(_call, :same_site, pairs, i, value, rewrap, args, option_visible_index) do
+  defp pair_mutations(_call, :same_site, pairs, i, value, rewrap, args, option_index) do
     for current <- same_site_value(value),
         mutation <-
-          same_site_pair_mutations(pairs, i, value, current, rewrap, args, option_visible_index),
+          same_site_pair_mutations(pairs, i, value, current, rewrap, args, option_index),
         do: mutation
   end
 
@@ -123,33 +119,33 @@ defmodule Mutare.Plug.Cookie do
 
   defp pair_mutations(_call, _key, _pairs, _i, _value, _rewrap, _args, _vis), do: []
 
-  defp same_site_pair_mutations(pairs, index, value, current, rewrap, args, option_visible_index) do
-    maybe_drop_same_site(pairs, index, current, rewrap, args, option_visible_index) ++
-      flipped_same_site(pairs, index, value, current, rewrap, args, option_visible_index)
+  defp same_site_pair_mutations(pairs, index, value, current, rewrap, args, option_index) do
+    maybe_drop_same_site(pairs, index, current, rewrap, args, option_index) ++
+      flipped_same_site(pairs, index, value, current, rewrap, args, option_index)
   end
 
   # Dropping `same_site: "Lax"` is usually equivalent to Plug's default, so only remove an
   # explicit policy when the written value differs from that default.
-  defp maybe_drop_same_site(_pairs, _index, "Lax", _rewrap, _args, _option_visible_index), do: []
+  defp maybe_drop_same_site(_pairs, _index, "Lax", _rewrap, _args, _option_index), do: []
 
-  defp maybe_drop_same_site(pairs, index, _current, rewrap, args, option_visible_index),
-    do: drop_pair(pairs, index, rewrap, args, option_visible_index)
+  defp maybe_drop_same_site(pairs, index, _current, rewrap, args, option_index),
+    do: drop_pair(pairs, index, rewrap, args, option_index)
 
   # Remove one keyword pair; when it was the last, drop the whole options argument down an
   # arity (`put_resp_cookie(conn, "sid", token, max_age: ttl)` → `/3`) rather than leave a
   # dangling `[]`.
-  defp drop_pair(pairs, index, rewrap, args, option_visible_index) do
+  defp drop_pair(pairs, index, rewrap, args, option_index) do
     case List.delete_at(pairs, index) do
-      [] -> [List.delete_at(args, option_visible_index)]
-      remaining -> [List.replace_at(args, option_visible_index, rewrap.(remaining))]
+      [] -> [List.delete_at(args, option_index)]
+      remaining -> [List.replace_at(args, option_index, rewrap.(remaining))]
     end
   end
 
-  defp flipped_same_site(pairs, index, value, current, rewrap, args, option_visible_index) do
+  defp flipped_same_site(pairs, index, value, current, rewrap, args, option_index) do
     for sibling <- Map.get(@same_site_swaps, current, []) do
       pairs
       |> List.replace_at(index, replace_value(pairs, index, value, sibling))
-      |> then(&List.replace_at(args, option_visible_index, rewrap.(&1)))
+      |> then(&List.replace_at(args, option_index, rewrap.(&1)))
     end
   end
 

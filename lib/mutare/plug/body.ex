@@ -25,10 +25,11 @@ defmodule Mutare.Plug.Body do
   alias Mutare.AST
   alias Mutare.Calls
 
-  # The `Plug.Conn` calls that carry a blankable body. In both, the body sits at effective
-  # argument index 2 — the third positional argument: `send_resp(conn, status, body)`,
-  # `resp(conn, status, body)`. The arity guard keeps a wrong-arity call (which would not
-  # be the real `Plug.Conn` function) from contributing a mutant.
+  # The `Plug.Conn` calls that carry a blankable body. In both, the body sits at argument
+  # index 2 — the third positional argument: `send_resp(conn, status, body)`,
+  # `resp(conn, status, body)` (a pipe stage is offered as that direct call, its piped conn
+  # at index 0). The arity guard keeps a wrong-arity call (which would not be the real
+  # `Plug.Conn` function) from contributing a mutant.
   @body_calls MapSet.new([
                 {:send_resp, 3},
                 {:resp, 3}
@@ -40,35 +41,25 @@ defmodule Mutare.Plug.Body do
   @spec name() :: :resp_body
   def name, do: :resp_body
 
-  # No `mutate/1`: the body's position depends on the call's effective arity, which isn't
-  # knowable without pipe context — so this family produces only through the context-aware
-  # `mutate/2`.
   @impl Mutare.Mutator
-  @spec mutate(Macro.t(), Mutare.Mutator.context()) :: :skip | [Macro.t()]
-  def mutate(node, %{pipe_mode: pipe_mode}) do
+  @spec mutate(Macro.t()) :: :skip | [Macro.t()]
+  def mutate(node) do
     case Calls.resolved_call(node) do
       {[:Plug, :Conn], call, args, rebuild} ->
-        body_mutations(call, args, pipe_mode, rebuild)
+        body_mutations(call, args, rebuild)
 
       _other ->
         :skip
     end
   end
 
-  @spec body_mutations(
-          atom(),
-          [Macro.t()],
-          Mutare.Mutator.pipe_mode(),
-          (atom(), [Macro.t()] -> Macro.t())
-        ) :: :skip | [Macro.t()]
-  defp body_mutations(call, args, pipe_mode, rebuild) do
-    with effective_arity when is_integer(effective_arity) <-
-           Mutare.Mutator.effective_arity(args, pipe_mode),
-         true <- MapSet.member?(@body_calls, {call, effective_arity}),
-         vis when is_integer(vis) <- Mutare.Mutator.visible_index(@body_index, pipe_mode),
-         body = Enum.at(args, vis),
+  @spec body_mutations(atom(), [Macro.t()], (atom(), [Macro.t()] -> Macro.t())) ::
+          :skip | [Macro.t()]
+  defp body_mutations(call, args, rebuild) do
+    with true <- MapSet.member?(@body_calls, {call, length(args)}),
+         body = Enum.at(args, @body_index),
          false <- blank?(body) do
-      [rebuild.(call, List.replace_at(args, vis, blank_body(body)))]
+      [rebuild.(call, List.replace_at(args, @body_index, blank_body(body)))]
     else
       _other -> :skip
     end

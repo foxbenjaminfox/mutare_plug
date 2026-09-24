@@ -53,7 +53,7 @@ defmodule Mutare.Plug.MixProject do
       # Tests use `Mutare.Test` and `Mutare.AST` for AST parse/render, so no direct
       # `:sourceror` dep is needed. A consuming project depends on both as
       # `:dev`/`:test` deps.
-      {:mutare, "~> 0.1"},
+      {:mutare, "~> 0.4.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}

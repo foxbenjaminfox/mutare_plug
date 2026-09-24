@@ -71,7 +71,7 @@ defmodule Mutare.Plug.BodyTest do
   end
 
   describe "pipe awareness" do
-    test "piped send_resp/3 blanks the visible body argument" do
+    test "piped send_resp/3 blanks the body argument" do
       source = plug(~s/  def call(conn, payload), do: conn |> send_resp(:ok, payload)/)
 
       assert body_diffs(source) == [

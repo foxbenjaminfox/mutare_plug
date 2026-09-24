@@ -51,15 +51,16 @@ defmodule Mutare.Plug.CookieTest do
       assert cookie_diffs(aliased) == [{"C.delete_resp_cookie(conn, \"sid\")", "conn"}]
     end
 
-    test "piped cookie calls become identity stages" do
+    test "piped cookie calls each collapse to the pipe that flows into them" do
       source =
         plug(
           ~s/  def call(conn, token), do: conn |> put_resp_cookie("sid", token) |> delete_resp_cookie("old")/
         )
 
       assert cookie_diffs(source) == [
-               {"put_resp_cookie(\"sid\", token)", "Elixir.Function.identity()"},
-               {"delete_resp_cookie(\"old\")", "Elixir.Function.identity()"}
+               {"conn |> put_resp_cookie(\"sid\", token)", "conn"},
+               {"conn |> put_resp_cookie(\"sid\", token) |> delete_resp_cookie(\"old\")",
+                "conn |> put_resp_cookie(\"sid\", token)"}
              ]
     end
   end
@@ -144,15 +145,16 @@ defmodule Mutare.Plug.CookieTest do
              ]
     end
 
-    test "piped put_resp_cookie/4 mutates the visible options argument" do
+    test "piped put_resp_cookie/4 mutates the options argument at the stage" do
       source =
         plug(
           ~s/  def call(conn, token), do: conn |> put_resp_cookie("sid", token, same_site: "Strict")/
         )
 
+      # The removal is diffed over the pipe it collapses; an option mutation leaves the
+      # piped conn alone, so it is diffed at the stage.
       assert cookie_diffs(source) == [
-               {"put_resp_cookie(\"sid\", token, same_site: \"Strict\")",
-                "Elixir.Function.identity()"},
+               {"conn |> put_resp_cookie(\"sid\", token, same_site: \"Strict\")", "conn"},
                {"put_resp_cookie(\"sid\", token, same_site: \"Strict\")",
                 "put_resp_cookie(\"sid\", token)"},
                {"put_resp_cookie(\"sid\", token, same_site: \"Strict\")",
@@ -231,12 +233,12 @@ defmodule Mutare.Plug.CookieTest do
              ]
     end
 
-    test "piped put_resp_cookie/4 drops max_age at the visible options argument" do
+    test "piped put_resp_cookie/4 drops max_age at the stage" do
       source =
         plug(~s/  def call(conn, token), do: conn |> put_resp_cookie("sid", token, max_age: 60)/)
 
       assert cookie_diffs(source) == [
-               {"put_resp_cookie(\"sid\", token, max_age: 60)", "Elixir.Function.identity()"},
+               {"conn |> put_resp_cookie(\"sid\", token, max_age: 60)", "conn"},
                {"put_resp_cookie(\"sid\", token, max_age: 60)", "put_resp_cookie(\"sid\", token)"}
              ]
     end

@@ -74,26 +74,22 @@ defmodule Mutare.Plug.SessionTest do
   end
 
   describe "pipe awareness" do
-    test "piped put_session/3 becomes an identity stage" do
+    test "piped put_session/3 collapses to the conn" do
       source = plug("  def call(conn), do: conn |> put_session(:user_id, 1)")
 
-      assert session_diffs(source) == [
-               {"put_session(:user_id, 1)", "Elixir.Function.identity()"}
-             ]
+      assert session_diffs(source) == [{"conn |> put_session(:user_id, 1)", "conn"}]
     end
 
-    test "piped clear_session/1 becomes an identity stage" do
+    test "piped clear_session/1 mid-chain collapses to what flows into it" do
       source = plug("  def call(conn), do: conn |> clear_session() |> assign(:next, true)")
 
-      assert session_diffs(source) == [{"clear_session()", "Elixir.Function.identity()"}]
+      assert session_diffs(source) == [{"conn |> clear_session()", "conn"}]
     end
 
-    test "piped configure_session/2 becomes an identity stage" do
+    test "piped configure_session/2 collapses to the conn" do
       source = plug("  def call(conn), do: conn |> configure_session(drop: true)")
 
-      assert session_diffs(source) == [
-               {"configure_session(drop: true)", "Elixir.Function.identity()"}
-             ]
+      assert session_diffs(source) == [{"conn |> configure_session(drop: true)", "conn"}]
     end
   end
 
