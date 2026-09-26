@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-26
+
 ### Changed
 
-- **Breaking: Mutare 0.4.0 or newer is required** (`{:mutare, "~> 0.4.0"}`). Mutare now
+- **Breaking: Mutare 0.4.1 or newer is required** (`{:mutare, "~> 0.4.1"}`). Mutare now
   offers a pipe stage to a mutator as the direct call it is sugar for, and this package
   reads every call that way; it no longer compiles against an older core.
 - **A removed pipe stage collapses to what flows into it.** Every removal family
@@ -49,5 +51,6 @@ Initial release.
   built-in string family's sentinel leaves via Mutare's overlap pruning.
 - `Mutare.Plug.all/0` for splicing all six families into a `:mutators` list.
 
-[Unreleased]: https://github.com/foxbenjaminfox/mutare_plug/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/foxbenjaminfox/mutare_plug/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/foxbenjaminfox/mutare_plug/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/foxbenjaminfox/mutare_plug/releases/tag/v0.1.0
